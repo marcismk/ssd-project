@@ -27,8 +27,6 @@ export const Comment = ({ content, authorName, authorSurname, createdAt }: Comme
                 </Text>
             </div>
         </Group>
-        <Text w="100%" pl={54} pt="sm" size="sm">
-            {content}
-        </Text>
+        <Text w="100%" pl={54} pt="sm" size="sm" dangerouslySetInnerHTML={{ __html: content }} />
     </Stack>
 );
