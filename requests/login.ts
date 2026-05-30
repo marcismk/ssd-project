@@ -1,7 +1,7 @@
 import { httpClient } from "@/lib/client";
 import type { User } from "@/types/user";
 
-interface LoginPayload {
+interface LoginPayload extends Record<string, unknown> {
 	email: string;
 	password: string;
 	remember?: boolean;

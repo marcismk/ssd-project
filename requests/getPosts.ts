@@ -5,8 +5,8 @@ interface PostWithAuthor extends Post {
 	author_id: number;
 	author_name: string;
 	author_surname: string;
-	likes?: number;
-	comments?: number;
+	likes: number;
+	comments: number;
 }
 
 interface PostResponse {
