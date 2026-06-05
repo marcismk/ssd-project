@@ -2,7 +2,7 @@ import { connectDB } from '@/lib/dbClient';
 import type { TokenPayload } from '@/lib/jwt';
 import { withAuth } from '@/lib/withAuth';
 
-export const POST = withAuth(
+export const DELETE = withAuth(
   async (
     _req: Request,
     { params }: { params: Promise<Record<string, string>> },
@@ -27,9 +27,22 @@ export const POST = withAuth(
     try {
       const db = connectDB();
       try {
-        db.prepare('INSERT INTO likes (posts_id, created_by) VALUES (?, ?)').run(postId, userId);
+        const deletePost = db.transaction((targetPostId: number, targetUserId: number) => {
+          db.prepare('DELETE FROM likes WHERE posts_id = ?').run(targetPostId);
+          db.prepare('DELETE FROM comments WHERE posts_id = ?').run(targetPostId);
 
-        return Response.json({ message: 'Like added successfully' }, { status: 201 });
+          return db
+            .prepare('DELETE FROM posts WHERE id = ? AND users_id = ?')
+            .run(targetPostId, targetUserId).changes;
+        });
+
+        const changes = deletePost(postId, userId);
+
+        if (!changes) {
+          return Response.json({ error: 'Post not found' }, { status: 404 });
+        }
+
+        return Response.json({ message: 'Post deleted successfully' }, { status: 200 });
       } finally {
         db.close();
       }

@@ -3,7 +3,6 @@
 import {
   Box,
   Button,
-  Checkbox,
   Grid,
   Group,
   Image,
@@ -13,27 +12,32 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { useForm } from '@mantine/form';
+import { isNotEmpty, useForm, isEmail } from '@mantine/form';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { loginRequest } from '@/requests/login';
-import { useAuth } from '@/stores/useAuth';
+import { signupRequest } from '@/requests/signup';
 
-export const Login = () => {
+export const Signup = () => {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const setUser = useAuth((state) => state.setUser);
 
   const form = useForm({
     initialValues: {
+      name: '',
+      surname: '',
       email: '',
+      secret: '',
       password: '',
-      remember: false,
+      confirmPassword: '',
     },
     validate: {
-      email: (v: string) => (/^\S+@\S+\.\S+$/.test(v) ? null : 'Invalid email'),
-      password: (v: string) => (v.length > 0 ? null : 'Password is required'),
+      name: isNotEmpty('Name is required'),
+      surname: isNotEmpty('Surname is required'),
+      email: isEmail('Invalid email address'),
+      password: isNotEmpty('Password is required'),
+      confirmPassword: (v: string, values) =>
+        v === values.password ? null : 'Passwords do not match',
     },
   });
 
@@ -41,13 +45,13 @@ export const Login = () => {
     setLoading(true);
     setError(null);
     try {
-      const resp = await loginRequest({
+      await signupRequest({
+        name: values.name,
+        surname: values.surname,
         email: values.email,
         password: values.password,
-        remember: values.remember,
       });
 
-      setUser(resp.user);
       router.push('/');
       router.refresh();
     } catch {
@@ -89,20 +93,38 @@ export const Login = () => {
             >
               <Stack gap="xs" mb="xl">
                 <Title order={2} c="dark.9" fw={700}>
-                  Login
+                  Sign up
                 </Title>
                 <Text c="dimmed" size="sm">
-                  Enter your credentials to get in
+                  Create an account to access exclusive features and stay updated
                 </Text>
               </Stack>
 
               <form onSubmit={form.onSubmit(handleSubmit)}>
                 <Stack gap="md">
                   <TextInput
+                    label="Name"
+                    placeholder="Antons"
+                    styles={{ label: { color: '#333', fontWeight: 500 } }}
+                    {...form.getInputProps('name')}
+                  />
+                  <TextInput
+                    label="Surname"
+                    placeholder="Spainis"
+                    styles={{ label: { color: '#333', fontWeight: 500 } }}
+                    {...form.getInputProps('surname')}
+                  />
+                  <TextInput
                     label="Email"
                     placeholder="user@example.com"
                     styles={{ label: { color: '#333', fontWeight: 500 } }}
                     {...form.getInputProps('email')}
+                  />
+                  <TextInput
+                    label="Secret (optional)"
+                    placeholder="Enter a secret"
+                    styles={{ label: { color: '#333', fontWeight: 500 } }}
+                    {...form.getInputProps('secret')}
                   />
                   <PasswordInput
                     label="Password"
@@ -110,10 +132,12 @@ export const Login = () => {
                     styles={{ label: { color: '#333', fontWeight: 500 } }}
                     {...form.getInputProps('password')}
                   />
-                  <Checkbox
-                    label="Remember me"
-                    color="dark"
-                    {...form.getInputProps('remember', { type: 'checkbox' })}
+
+                  <PasswordInput
+                    label="Confirm Password"
+                    placeholder="••••••••"
+                    styles={{ label: { color: '#333', fontWeight: 500 } }}
+                    {...form.getInputProps('confirmPassword')}
                   />
 
                   {error && (
@@ -131,21 +155,21 @@ export const Login = () => {
                     loading={loading}
                     style={{ fontWeight: 600 }}
                   >
-                    Login
+                    Sign up
                   </Button>
 
                   <Group justify="center">
                     <Text size="sm" c="dimmed">
-                      Not a member?{' '}
+                      Already have an account?{' '}
                       <Text
                         component="a"
-                        href="/signup"
+                        href="/login"
                         size="sm"
                         fw={700}
                         c="dark.9"
                         style={{ textDecoration: 'none' }}
                       >
-                        Create an account
+                        Login
                       </Text>
                     </Text>
                   </Group>
@@ -158,7 +182,7 @@ export const Login = () => {
           <Grid.Col span={{ base: 12, sm: 7 }} visibleFrom="sm">
             <Box style={{ position: 'relative', height: '100%', minHeight: 520 }}>
               <Image
-                src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&auto=format&fit=crop"
+                src="https://plus.unsplash.com/premium_photo-1674917000586-b7564f21540e?q=80&w=776&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                 alt="scenic"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 h="100%"

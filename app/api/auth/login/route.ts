@@ -1,55 +1,50 @@
-import { cookies } from "next/headers";
-import { connectDB } from "@/lib/dbClient";
-import { signToken } from "@/lib/jwt";
+import { cookies } from 'next/headers';
+import { connectDB } from '@/lib/dbClient';
+import { signToken } from '@/lib/jwt';
 
 interface UserRow {
-	id: number;
-	email: string;
-	name: string;
+  id: number;
+  email: string;
+  name: string;
 }
 
 export async function POST(req: Request) {
-	try {
-		const cookieStore = await cookies();
-		const body = await req.json();
-		const email = typeof body?.email === "string" ? body.email : "";
-		const password = typeof body?.password === "string" ? body.password : "";
-		const remember = body?.remember === true;
+  try {
+    const cookieStore = await cookies();
+    const body = await req.json();
+    const email = typeof body?.email === 'string' ? body.email : '';
+    const password = typeof body?.password === 'string' ? body.password : '';
+    const remember = body?.remember === true;
 
-		if (!email || !password) {
-			return Response.json(
-				{ error: "Email and password are required" },
-				{ status: 400 },
-			);
-		}
+    if (!email || !password) {
+      return Response.json({ error: 'Email and password are required' }, { status: 400 });
+    }
 
-		const db = connectDB();
-		try {
-			const user = db
-				.prepare(
-					`SELECT id, email, name FROM users WHERE email = '${email}' AND password = '${password}' LIMIT 1`,
-				)
-				.get() as UserRow | undefined;
+    const db = connectDB();
+    try {
+      const user = db
+        .prepare(`SELECT id, email, name FROM users WHERE email = ? AND password = ? LIMIT 1`)
+        .get(email, password) as UserRow | undefined;
 
-			if (!user) {
-				return Response.json({ error: "Invalid credentials" }, { status: 401 });
-			}
+      if (!user) {
+        return Response.json({ error: 'Invalid credentials' }, { status: 401 });
+      }
 
-			const token = await signToken({ userId: user.id, email: user.email });
+      const token = await signToken({ userId: user.id, email: user.email });
 
-			cookieStore.set({
-				name: "token",
-				value: token,
-				path: "/",
-				sameSite: "lax",
-				...(remember ? { maxAge: 60 * 60 * 24 * 7 } : {}),
-			});
+      cookieStore.set({
+        name: 'token',
+        value: token,
+        path: '/',
+        sameSite: 'lax',
+        ...(remember ? { maxAge: 60 * 60 * 24 * 7 } : {}),
+      });
 
-			return Response.json({ user }, { status: 200 });
-		} finally {
-			db.close();
-		}
-	} catch {
-		return Response.json({ error: "Invalid request" }, { status: 400 });
-	}
+      return Response.json({ user }, { status: 200 });
+    } finally {
+      db.close();
+    }
+  } catch (err) {
+    return Response.json({ error: 'Invalid request' }, { status: 400 });
+  }
 }

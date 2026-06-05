@@ -1,26 +1,25 @@
 import { connectDB } from '@/lib/dbClient';
 import { withAuth } from '@/lib/withAuth';
 
-export const GET = withAuth(async (_req, _ctx, token) => {
-  const { userId } = token;
+export const GET = withAuth(async (_req, ctx: Record<string, any>) => {
+  const { id } = await ctx.params;
   const db = connectDB();
   try {
     const user = db
       .prepare(
         `
         SELECT 
-            id, name, surname, email,
+            id, name, surname, email, secret,
             EXISTS(
-              SELECT 1
+              SELECT name
               FROM roles
               WHERE roles.id = users.roles_id
-                AND roles.name = 'admin'
-            ) as is_admin
+            ) as role
         FROM users 
         WHERE id = ?
         `
       )
-      .get(userId);
+      .get(id);
 
     return Response.json(user, { status: 200 });
   } catch (error) {

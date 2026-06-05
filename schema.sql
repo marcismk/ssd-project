@@ -40,3 +40,11 @@ CREATE TABLE IF NOT EXISTS likes (
   FOREIGN KEY (posts_id)   REFERENCES posts (id),
   FOREIGN KEY (created_by) REFERENCES users (id)
 );
+
+CREATE TABLE IF NOT EXISTS roles (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT,
+	"level" INTEGER
+);
+
+ALTER TABLE users ADD roles_id INTEGER NOT NULL;
