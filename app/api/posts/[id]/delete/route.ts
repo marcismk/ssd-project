@@ -27,16 +27,14 @@ export const DELETE = withAuth(
     try {
       const db = connectDB();
       try {
-        const deletePost = db.transaction((targetPostId: number, targetUserId: number) => {
+        const deletePost = db.transaction((targetPostId: number) => {
           db.prepare('DELETE FROM likes WHERE posts_id = ?').run(targetPostId);
           db.prepare('DELETE FROM comments WHERE posts_id = ?').run(targetPostId);
 
-          return db
-            .prepare('DELETE FROM posts WHERE id = ? AND users_id = ?')
-            .run(targetPostId, targetUserId).changes;
+          return db.prepare('DELETE FROM posts WHERE id = ?').run(targetPostId).changes;
         });
 
-        const changes = deletePost(postId, userId);
+        const changes = deletePost(postId);
 
         if (!changes) {
           return Response.json({ error: 'Post not found' }, { status: 404 });

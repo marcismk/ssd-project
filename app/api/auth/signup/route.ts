@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { connectDB } from '@/lib/dbClient';
 import { signToken } from '@/lib/jwt';
+import { useAuth } from '@/stores/useAuth';
 import { User } from '@/types/user';
 
 export async function POST(req: Request) {
@@ -34,6 +35,10 @@ export async function POST(req: Request) {
       const user = db
         .prepare('SELECT id, email, name, surname FROM users WHERE id = ? LIMIT 1')
         .get(result.lastInsertRowid) as User | undefined;
+
+      if (user) {
+        useAuth.getState().setUser(user);
+      }
 
       const token = await signToken({ userId: user?.id, email: user?.email });
 
