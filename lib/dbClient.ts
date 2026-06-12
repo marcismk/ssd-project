@@ -1,6 +1,6 @@
-import path from "node:path";
-import Database from "better-sqlite3";
+import { createClient } from '@libsql/client';
 
-export const dbPath = path.join(process.cwd(), "database.db");
-
-export const connectDB = () => new Database(dbPath);
+export const db = createClient({
+  url: process.env.TURSO_DATABASE_URL || '',
+  authToken: process.env.TURSO_AUTH_TOKEN || '',
+});

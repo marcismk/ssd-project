@@ -1,4 +1,4 @@
-import { connectDB } from '@/lib/dbClient';
+import { db } from '@/lib/dbClient';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -8,19 +8,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return Response.json({ error: 'Invalid post id' }, { status: 400 });
   }
 
-  const db = connectDB();
   try {
-    const post = db
-      .prepare(
-        `SELECT p.id, p.title, p.image, p.meta, p.created_at,
+    const result = await db.execute({
+      sql: `SELECT p.id, p.title, p.image, p.meta, p.created_at,
 				        u.id AS author_id, u.name AS author_name, u.surname AS author_surname,
 						(SELECT COUNT(*) FROM likes WHERE posts_id = p.id) AS likes,
                         (SELECT COUNT(*) FROM comments WHERE posts_id = p.id) AS comments
 				 FROM posts p
 				 JOIN users u ON u.id = p.users_id
-				 WHERE p.id = ?`
-      )
-      .get(postId);
+				 WHERE p.id = ?`,
+      args: [postId],
+    });
+    const post = result.rows[0];
 
     if (!post) {
       return Response.json({ error: 'Post not found' }, { status: 404 });
@@ -29,7 +28,5 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return Response.json({ post }, { status: 200 });
   } catch {
     return Response.json({ error: 'Failed to fetch post' }, { status: 500 });
-  } finally {
-    db.close();
   }
 }

@@ -1,4 +1,4 @@
-import { connectDB } from '@/lib/dbClient';
+import { db } from '@/lib/dbClient';
 import type { TokenPayload } from '@/lib/jwt';
 import { withAuth } from '@/lib/withAuth';
 
@@ -25,25 +25,26 @@ export const DELETE = withAuth(
     }
 
     try {
-      const db = connectDB();
-      try {
-        const deletePost = db.transaction((targetPostId: number) => {
-          db.prepare('DELETE FROM likes WHERE posts_id = ?').run(targetPostId);
-          db.prepare('DELETE FROM comments WHERE posts_id = ?').run(targetPostId);
+      await db.execute({
+        sql: 'DELETE FROM likes WHERE posts_id = ?',
+        args: [postId],
+      });
 
-          return db.prepare('DELETE FROM posts WHERE id = ?').run(targetPostId).changes;
-        });
+      await db.execute({
+        sql: 'DELETE FROM comments WHERE posts_id = ?',
+        args: [postId],
+      });
 
-        const changes = deletePost(postId);
+      const deleteResult = await db.execute({
+        sql: 'DELETE FROM posts WHERE id = ?',
+        args: [postId],
+      });
 
-        if (!changes) {
-          return Response.json({ error: 'Post not found' }, { status: 404 });
-        }
-
-        return Response.json({ message: 'Post deleted successfully' }, { status: 200 });
-      } finally {
-        db.close();
+      if (!deleteResult.rowsAffected) {
+        return Response.json({ error: 'Post not found' }, { status: 404 });
       }
+
+      return Response.json({ message: 'Post deleted successfully' }, { status: 200 });
     } catch {
       return Response.json({ error: 'Invalid request' }, { status: 400 });
     }

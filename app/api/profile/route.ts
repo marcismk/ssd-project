@@ -1,13 +1,11 @@
-import { connectDB } from '@/lib/dbClient';
+import { db } from '@/lib/dbClient';
 import { withAuth } from '@/lib/withAuth';
 
 export const GET = withAuth(async (_req, _ctx, token) => {
   const { userId } = token;
-  const db = connectDB();
   try {
-    const user = db
-      .prepare(
-        `
+    const result = await db.execute({
+      sql: `
         SELECT 
             id, name, surname, email,
             EXISTS(
@@ -18,15 +16,13 @@ export const GET = withAuth(async (_req, _ctx, token) => {
             ) as is_admin
         FROM users 
         WHERE id = ?
-        `
-      )
-      .get(userId);
+        `,
+      args: [userId],
+    });
 
-    return Response.json(user, { status: 200 });
+    return Response.json(result.rows[0], { status: 200 });
   } catch (error) {
     console.log(error);
     return Response.json({ error: 'Failed to fetch user' }, { status: 500 });
-  } finally {
-    db.close();
   }
 });

@@ -1,4 +1,4 @@
-import { connectDB } from '@/lib/dbClient';
+import { db } from '@/lib/dbClient';
 import type { TokenPayload } from '@/lib/jwt';
 import { withAuth } from '@/lib/withAuth';
 
@@ -25,14 +25,12 @@ export const POST = withAuth(
     }
 
     try {
-      const db = connectDB();
-      try {
-        db.prepare('INSERT INTO likes (posts_id, created_by) VALUES (?, ?)').run(postId, userId);
+      await db.execute({
+        sql: 'INSERT INTO likes (posts_id, created_by) VALUES (?, ?)',
+        args: [postId, userId],
+      });
 
-        return Response.json({ message: 'Like added successfully' }, { status: 201 });
-      } finally {
-        db.close();
-      }
+      return Response.json({ message: 'Like added successfully' }, { status: 201 });
     } catch {
       return Response.json({ error: 'Invalid request' }, { status: 400 });
     }

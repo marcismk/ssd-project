@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { connectDB } from '@/lib/dbClient';
+import { db } from '@/lib/dbClient';
 import { signToken } from '@/lib/jwt';
 
 interface UserRow {
@@ -20,30 +20,27 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const db = connectDB();
-    try {
-      const user = db
-        .prepare(`SELECT id, email, name FROM users WHERE email = ? AND password = ? LIMIT 1`)
-        .get(email, password) as UserRow | undefined;
+    const result = await db.execute({
+      sql: 'SELECT id, email, name FROM users WHERE email = ? AND password = ? LIMIT 1',
+      args: [email, password],
+    });
+    const user = result.rows[0] as unknown as UserRow | undefined;
 
-      if (!user) {
-        return Response.json({ error: 'Invalid credentials' }, { status: 401 });
-      }
-
-      const token = await signToken({ userId: user.id, email: user.email });
-
-      cookieStore.set({
-        name: 'token',
-        value: token,
-        path: '/',
-        sameSite: 'lax',
-        ...(remember ? { maxAge: 60 * 60 * 24 * 7 } : {}),
-      });
-
-      return Response.json({ user }, { status: 200 });
-    } finally {
-      db.close();
+    if (!user) {
+      return Response.json({ error: 'Invalid credentials' }, { status: 401 });
     }
+
+    const token = await signToken({ userId: Number(user.id), email: user.email });
+
+    cookieStore.set({
+      name: 'token',
+      value: token,
+      path: '/',
+      sameSite: 'lax',
+      ...(remember ? { maxAge: 60 * 60 * 24 * 7 } : {}),
+    });
+
+    return Response.json({ user }, { status: 200 });
   } catch (err) {
     return Response.json({ error: 'Invalid request' }, { status: 400 });
   }
