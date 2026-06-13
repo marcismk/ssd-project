@@ -17,6 +17,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { signupRequest } from '@/requests/signup';
 
+const DEFAULT_USER_SECRET = 'This is user secret for testing purposes';
+
 export const Signup = () => {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +52,7 @@ export const Signup = () => {
         surname: values.surname,
         email: values.email,
         password: values.password,
+        secret: values.secret || DEFAULT_USER_SECRET,
       });
 
       router.push('/');
